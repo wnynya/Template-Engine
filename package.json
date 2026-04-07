@@ -1,0 +1,11 @@
+{
+  "name": "@amuject/template-engine",
+  "version": "1.0.0",
+  "description": "Easy HTML-based template engine",
+  "author": "Sungwan Jo <sung@wanyne.com> (https://wanyne.com)",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "node-html-parser": "^7.1.0"
+  }
+}

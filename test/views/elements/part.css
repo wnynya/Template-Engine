@@ -1,0 +1,16 @@
+@import './nested.css';
+
+[scoped] .hello {
+  color: red;
+}
+
+[scoped] img {
+  width: 100px;
+}
+
+[scoped] .bg {
+  width: 100px;
+  height: 100px;
+  background-image: url('./IMG_7101-sq.jpg');
+  background-size: cover;
+}

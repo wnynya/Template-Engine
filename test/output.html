@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <title>test</title>
+  </head>
+  <body>
+    <div class="import">
+      <h1>Import test</h1>
+
+    </div>
+    <div class="nested-import">
+      <section class="wrapper">
+  <h2>Nested import works</h2>
+
+</section>
+
+    </div>
+    <div class="scoped-style">
+      <link href="/assets/scoped/elements/part-0e96883a.css" rel="stylesheet" />
+<script src="/assets/elements/part.js" type="module"></script>
+
+<style>
+  /* inline scoped style */
+  [scoped="0e96883a"] {
+    background: yellow;
+  }
+  [scoped="0e96883a"] .hello {
+    color: red;
+  }
+</style>
+
+<div scoped="0e96883a">
+  <span class="hello">Helllll-looooouu</span>
+
+  <img src="/assets/elements/IMG_7101-sq.jpg" />
+  <a href="/assets/elements/IMG_7101-sq.jpg">Download</a>
+  <a href="/assets/elements/test.zip">Download zip</a>
+
+  <div class="bg"></div>
+</div>
+
+
+      <span class="hello">Helllll-looooouu</span>
+    </div>
+  </body>
+</html>
