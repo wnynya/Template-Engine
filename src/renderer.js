@@ -102,11 +102,11 @@ function renderElement(ast, scope, ctx) {
   if (ast.tag === 'style' && isScopedRoot) {
     return renderScopedStyle(ast, attributes, scope, ctx);
   }
-  if (ast.tag === 'link' && isStylesheetLink(attributes)) {
-    return renderStylesheetLink(ast, attributes, scope, ctx);
+  if (ast.tag === 'link' && isLinkedStyle(attributes)) {
+    return renderLinkedStyle(ast, attributes, scope, ctx);
   }
   if (ast.tag === 'script' && isLocalScript(attributes)) {
-    return renderScriptAsset(ast, attributes, scope, ctx);
+    return renderScript(ast, attributes, scope, ctx);
   }
   rewriteResourceAttributes(ast.tag, attributes, ctx);
   if (isScopedRoot && ctx.scopeKey) {
@@ -196,7 +196,7 @@ function renderScopedStyle(ast, attributes, scope, ctx) {
 
   return `<style${joinAttributes(attributes)}>${scopedCSS}</style>`;
 }
-function renderStylesheetLink(ast, attributes, scope, ctx) {
+function renderLinkedStyle(ast, attributes, scope, ctx) {
   const href = attributes.href;
   if (
     typeof href === 'string' &&
@@ -217,12 +217,12 @@ function renderStylesheetLink(ast, attributes, scope, ctx) {
   html += voidTags.has(ast.tag) ? ` />` : `></${ast.tag}>`;
   return html;
 }
-function isStylesheetLink(attributes) {
+function isLinkedStyle(attributes) {
   return attributes.rel === 'stylesheet' && typeof attributes.href === 'string';
 }
 
 // assets: script
-function renderScriptAsset(ast, attributes, scope, ctx) {
+function renderScript(ast, attributes, scope, ctx) {
   if (
     typeof ctx.assetRenderer === 'function' &&
     typeof attributes.src === 'string'
