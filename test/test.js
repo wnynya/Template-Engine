@@ -40,18 +40,20 @@ function test() {
     new RegExp(`<style>[^]*\\[scoped="${scopeMatch[1]}"\\][^]*<\\/style>`),
   );
 
-  const scopedAsset = engine.getAsset(`/assets/scoped/elements/part-${scopeMatch[1]}.css`);
+  const scopedAsset = engine.asset(`/assets/scoped/elements/part-${scopeMatch[1]}.css`);
   assert.ok(scopedAsset);
   assert.match(
     scopedAsset.body,
     new RegExp(`@import ['"]/assets/scoped/elements/nested-${scopeMatch[1]}\\.css['"]`),
   );
+  assert.match(scopedAsset.body, /@import ['"]\/global\.css['"]/);
   assert.match(scopedAsset.body, new RegExp(`\\[scoped="${scopeMatch[1]}"\\] \\.hello`));
   assert.match(
     scopedAsset.body,
     /background-image: url\(['"]\/assets\/elements\/IMG_7101-sq\.jpg['"]\)/,
   );
-  const nestedScopedAsset = engine.getAsset(
+  assert.match(scopedAsset.body, /background-image: url\(['"]\/images\/bg\.png['"]\)/);
+  const nestedScopedAsset = engine.asset(
     `/assets/scoped/elements/nested-${scopeMatch[1]}.css`,
   );
   assert.ok(nestedScopedAsset);
@@ -59,18 +61,33 @@ function test() {
     nestedScopedAsset.body,
     new RegExp(`\\[scoped="${scopeMatch[1]}"\\] \\.nested`),
   );
-  const scriptAsset = engine.getAsset('/assets/elements/part.js');
+  const scriptAsset = engine.asset('/assets/elements/part.js');
   assert.ok(scriptAsset);
   assert.equal(scriptAsset.mime, 'text/javascript');
   assert.match(scriptAsset.body, /\/assets\/elements\/nested\.js/);
+  assert.match(scriptAsset.body, /import ['"]\/runtime\.js['"]/);
   assert.match(scriptAsset.body, /window\.partLoaded = true;/);
-  const nestedScriptAsset = engine.getAsset('/assets/elements/nested.js');
+  const nestedScriptAsset = engine.asset('/assets/elements/nested.js');
   assert.ok(nestedScriptAsset);
   assert.match(nestedScriptAsset.body, /window\.nestedLoaded = true;/);
-  const imageAsset = engine.getAsset('/assets/elements/IMG_7101-sq.jpg');
+  const imageAsset = engine.asset('/assets/elements/IMG_7101-sq.jpg');
   assert.ok(imageAsset);
-  assert.equal(imageAsset.kind, 'file');
+  assert.equal(imageAsset.kind, 'link');
   assert.match(imageAsset.path, /IMG_7101-sq\.jpg$/);
+
+  const absoluteOutput = engine.render('elements/absolute.html');
+  assert.match(
+    absoluteOutput,
+    /<link href="\/global\.css" rel="stylesheet" \/>/,
+  );
+  assert.match(
+    absoluteOutput,
+    /<script src="\/runtime\.js" type="module"><\/script>/,
+  );
+  assert.match(absoluteOutput, /<img src="\/images\/logo\.png" \/>/);
+  assert.match(absoluteOutput, /<a href="\/downloads\/manual\.pdf">Manual<\/a>/);
+  assert.equal(engine.asset('/global.css'), null);
+  assert.equal(engine.asset('/runtime.js'), null);
 
   const externalScriptOutput = engine.render('elements/external-script.html');
   assert.match(

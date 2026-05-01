@@ -200,7 +200,7 @@ function renderStylesheetLink(ast, attributes, scope, ctx) {
   if (
     typeof href === 'string' &&
     typeof ctx.assetRenderer === 'function' &&
-    !isExternalURL(href)
+    isLocalResource(href)
   ) {
     attributes.href = ctx.assetRenderer(
       href,
@@ -217,10 +217,10 @@ function renderStylesheetLink(ast, attributes, scope, ctx) {
   return html;
 }
 
+// helpers
 function isStylesheetLink(attributes) {
   return attributes.rel === 'stylesheet' && typeof attributes.href === 'string';
 }
-
 function renderScriptAsset(ast, attributes, scope, ctx) {
   if (
     typeof ctx.assetRenderer === 'function' &&
@@ -234,11 +234,9 @@ function renderScriptAsset(ast, attributes, scope, ctx) {
   html += `>${renderAST(ast.childs, scope, ctx)}</${ast.tag}>`;
   return html;
 }
-
 function isLocalScript(attributes) {
-  return typeof attributes.src === 'string' && !isExternalURL(attributes.src);
+  return typeof attributes.src === 'string' && isLocalResource(attributes.src);
 }
-
 function rewriteResourceAttributes(tag, attributes, ctx) {
   const keys = resourceAttributes[tag];
   if (!keys || typeof ctx.assetRenderer !== 'function') {
@@ -246,13 +244,24 @@ function rewriteResourceAttributes(tag, attributes, ctx) {
   }
 
   for (const key of keys) {
-    if (typeof attributes[key] !== 'string' || isExternalURL(attributes[key])) {
+    if (
+      typeof attributes[key] !== 'string' ||
+      !isLocalResource(attributes[key])
+    ) {
       continue;
     }
     attributes[key] = ctx.assetRenderer(attributes[key], ctx.path);
   }
 }
-
+function isLocalResource(target) {
+  return (
+    typeof target === 'string' &&
+    target.length > 0 &&
+    !isExternalURL(target) &&
+    !target.startsWith('/') &&
+    !target.startsWith('#')
+  );
+}
 function isExternalURL(target) {
   return typeof target === 'string' && /^[a-z][a-z\d+\-.]*:/i.test(target);
 }

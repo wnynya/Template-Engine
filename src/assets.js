@@ -15,6 +15,16 @@ class Assets {
     return this.#assets.get(path) ?? null;
   }
 
+  ensureAsset(sourcePath, scope = null) {
+    const assetPath = this.createAssetPath(sourcePath, scope);
+
+    if (!this.#assets.has(assetPath)) {
+      this.#assets.set(assetPath, this.createAssetEntry(sourcePath, scope));
+    }
+
+    return assetPath;
+  }
+
   createAssetPath(sourcePath, scope = null) {
     const relativePath = nodepath.relative(this.views, sourcePath);
     const normalizedPath = relativePath.split(nodepath.sep).join('/');
@@ -28,26 +38,17 @@ class Assets {
     return `/assets/scoped/${basename}-${scope}${extension}`;
   }
 
-  ensureAsset(sourcePath, scope = null) {
-    const assetPath = this.createAssetPath(sourcePath, scope);
-    if (!this.#assets.has(assetPath)) {
-      this.#assets.set(assetPath, this.createAssetEntry(sourcePath, scope));
-    }
+  createAssetEntry(sourcePath, scope = null) {
+    const mime = getMime(sourcePath);
 
-    return assetPath;
-  }
-
-  createAssetEntry(path, scope = null) {
-    const mime = getMime(path);
-
-    if (isTransformableAsset(path)) {
-      const source = nodefs.readFileSync(path, 'utf8');
-      const body = this.transformAsset(source, path, scope);
+    if (isTransformableAsset(sourcePath)) {
+      const source = nodefs.readFileSync(sourcePath, 'utf8');
+      const body = this.transformAsset(source, sourcePath, scope);
       return {
         kind: 'store',
         mime,
         body,
-        path,
+        path: sourcePath,
         scope,
       };
     }
@@ -55,7 +56,7 @@ class Assets {
     return {
       kind: 'link',
       mime,
-      path,
+      path: sourcePath,
       scope,
     };
   }
@@ -79,35 +80,44 @@ class Assets {
 
     content = content.replaceAll(
       /@import\s+(url\()?\s*(['"])([^'"]+)\2\s*\)?/g,
-      (match, urlWrapper, quote, target) => {
-        if (!isLocalSpecifier(target)) {
-          return match;
-        }
-
-        const dependencyPath = this.resolvePath(sourcePath, target);
-        const assetPath = this.ensureAsset(dependencyPath, scope);
-        if (urlWrapper) {
-          return `@import url(${quote}${assetPath}${quote})`;
-        }
-        return `@import ${quote}${assetPath}${quote}`;
-      },
+      (match, urlWrapper, quote, target) =>
+        this.rewriteCSSImport(match, sourcePath, target, {
+          quote,
+          scope,
+          urlWrapper,
+        }),
     );
 
     content = content.replaceAll(
       /url\(\s*(['"]?)([^'")]+)\1\s*\)/g,
-      (match, quote, target) => {
-        if (!isLocalSpecifier(target)) {
-          return match;
-        }
-
-        const dependencyPath = this.resolvePath(sourcePath, target);
-        const assetPath = this.ensureAsset(dependencyPath);
-        const wrappedQuote = quote || '"';
-        return `url(${wrappedQuote}${assetPath}${wrappedQuote})`;
-      },
+      (match, quote, target) =>
+        this.rewriteCSSUrl(match, sourcePath, target, quote),
     );
 
     return content;
+  }
+
+  rewriteCSSImport(match, sourcePath, target, options) {
+    if (!isLocalSpecifier(target)) {
+      return match;
+    }
+
+    const assetPath = this.ensureDependency(sourcePath, target, options.scope);
+
+    if (options.urlWrapper) {
+      return `@import url(${options.quote}${assetPath}${options.quote})`;
+    }
+    return `@import ${options.quote}${assetPath}${options.quote}`;
+  }
+
+  rewriteCSSUrl(match, sourcePath, target, quote) {
+    if (!isLocalSpecifier(target)) {
+      return match;
+    }
+
+    const assetPath = this.ensureDependency(sourcePath, target);
+    const wrappedQuote = quote || '"';
+    return `url(${wrappedQuote}${assetPath}${wrappedQuote})`;
   }
 
   transformJavaScript(source, sourcePath) {
@@ -145,8 +155,12 @@ class Assets {
       return target;
     }
 
+    return this.ensureDependency(sourcePath, target);
+  }
+
+  ensureDependency(sourcePath, target, scope = null) {
     const dependencyPath = this.resolvePath(sourcePath, target);
-    return this.ensureAsset(dependencyPath);
+    return this.ensureAsset(dependencyPath, scope);
   }
 
   rewriteInlineStyle(css, scope) {
@@ -163,6 +177,7 @@ function isLocalSpecifier(target) {
     typeof target === 'string' &&
     target.length > 0 &&
     !isExternalURL(target) &&
+    !target.startsWith('/') &&
     !target.startsWith('data:') &&
     !target.startsWith('#')
   );

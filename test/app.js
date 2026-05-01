@@ -12,6 +12,7 @@ import Engine from '@amuject/template-engine';
 const engine = new Engine(nodepath.resolve(__dirname, './views'));
 
 const app = engine.express(new express());
+app.use(express.static(nodepath.resolve(__dirname, './public')));
 
 app.get('/', (req, res) => {
   const scope = {
