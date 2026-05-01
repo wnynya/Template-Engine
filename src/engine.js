@@ -21,9 +21,6 @@ class Engine {
     }
 
     if (nodepath.isAbsolute(target)) {
-      if (!isPathInside(this.views, target)) {
-        throw new Error(`Path is outside views: ${target}`);
-      }
       return target;
     }
 
