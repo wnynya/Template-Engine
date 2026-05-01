@@ -185,6 +185,7 @@ function renderImport(ast, scope, ctx) {
   return ctx.resolveImport(ctx.path, target, scope);
 }
 
+// assets: style
 function renderScopedStyle(ast, attributes, scope, ctx) {
   delete attributes.scoped;
   const css = renderAST(ast.childs, scope, ctx);
@@ -216,11 +217,11 @@ function renderStylesheetLink(ast, attributes, scope, ctx) {
   html += voidTags.has(ast.tag) ? ` />` : `></${ast.tag}>`;
   return html;
 }
-
-// helpers
 function isStylesheetLink(attributes) {
   return attributes.rel === 'stylesheet' && typeof attributes.href === 'string';
 }
+
+// assets: script
 function renderScriptAsset(ast, attributes, scope, ctx) {
   if (
     typeof ctx.assetRenderer === 'function' &&
@@ -237,6 +238,8 @@ function renderScriptAsset(ast, attributes, scope, ctx) {
 function isLocalScript(attributes) {
   return typeof attributes.src === 'string' && isLocalResource(attributes.src);
 }
+
+// assets: resources
 function rewriteResourceAttributes(tag, attributes, ctx) {
   const keys = resourceAttributes[tag];
   if (!keys || typeof ctx.assetRenderer !== 'function') {

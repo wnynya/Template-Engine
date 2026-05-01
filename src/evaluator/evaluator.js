@@ -94,7 +94,7 @@ class Parser {
       case 'boolean':
       case 'null':
       case 'undefined': {
-        return { type: 'Literal', value: token.value };
+        return this.parsePostfix({ type: 'Literal', value: token.value });
       }
       case 'identifier': {
         return this.parsePostfix({
@@ -158,13 +158,44 @@ class Parser {
       }
 
       if (token.type === 'paren_open') {
-        throw new Error('Function calls are not allowed');
+        current = {
+          type: 'CallExpression',
+          callee: current,
+          arguments: this.parseArguments(),
+        };
+        continue;
       }
 
       break;
     }
 
     return current;
+  }
+
+  parseArguments() {
+    const args = [];
+    this.expect('paren_open');
+
+    if (this.peek().type === 'paren_close') {
+      this.next();
+      return args;
+    }
+
+    while (true) {
+      args.push(this.parseExpression());
+
+      const token = this.peek();
+      if (token.type === 'comma') {
+        this.next();
+        continue;
+      }
+      if (token.type === 'paren_close') {
+        this.next();
+        return args;
+      }
+
+      throw new Error(`Expected comma or paren_close, got ${token.type}`);
+    }
   }
 
   peek() {
@@ -253,6 +284,11 @@ function tokenize(code) {
     }
     if (char === ':') {
       tokens.push({ type: 'colon', value: char });
+      index += 1;
+      continue;
+    }
+    if (char === ',') {
+      tokens.push({ type: 'comma', value: char });
       index += 1;
       continue;
     }
@@ -389,6 +425,8 @@ function evaluateExpression(node, scope) {
       return getIdentifierValue(scope, node.name);
     case 'MemberExpression':
       return getMemberValue(node, scope);
+    case 'CallExpression':
+      return evaluateCall(node, scope);
     case 'UnaryExpression':
       return evaluateUnary(node, scope);
     case 'BinaryExpression':
@@ -426,6 +464,50 @@ function getMemberValue(node, scope) {
   }
 
   return object[property];
+}
+
+function evaluateCall(node, scope) {
+  const args = node.arguments.map((arg) => evaluateExpression(arg, scope));
+  const { fn, thisValue } = getCallableValue(node.callee, scope);
+
+  if (typeof fn !== 'function') {
+    return undefined;
+  }
+
+  return fn.apply(thisValue, args);
+}
+
+function getCallableValue(node, scope) {
+  if (node.type !== 'MemberExpression') {
+    return {
+      fn: evaluateExpression(node, scope),
+      thisValue: undefined,
+    };
+  }
+
+  const object = evaluateExpression(node.object, scope);
+  if (object == null) {
+    return {
+      fn: undefined,
+      thisValue: undefined,
+    };
+  }
+
+  const property = node.computed
+    ? evaluateExpression(node.property, scope)
+    : node.property.value;
+
+  if (DISALLOWED_KEYS.has(String(property))) {
+    return {
+      fn: undefined,
+      thisValue: undefined,
+    };
+  }
+
+  return {
+    fn: object[property],
+    thisValue: object,
+  };
 }
 
 function evaluateUnary(node, scope) {

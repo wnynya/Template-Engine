@@ -171,7 +171,6 @@ class Assets {
 function rewriteScopedCSS(css, scope) {
   return css.replaceAll('[scoped]', `[scoped="${scope}"]`);
 }
-
 function isLocalSpecifier(target) {
   return (
     typeof target === 'string' &&
@@ -182,11 +181,9 @@ function isLocalSpecifier(target) {
     !target.startsWith('#')
   );
 }
-
 function isExternalURL(target) {
   return typeof target === 'string' && /^[a-z][a-z\d+\-.]*:/i.test(target);
 }
-
 function getMime(path) {
   switch (nodepath.extname(path)) {
     case '.css': {
@@ -231,7 +228,6 @@ function getMime(path) {
     }
   }
 }
-
 function isTransformableAsset(sourcePath) {
   return ['.css', '.js'].includes(nodepath.extname(sourcePath));
 }
