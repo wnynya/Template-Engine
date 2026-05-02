@@ -29,12 +29,12 @@ class Templates {
 
   getScope(path) {
     if (!this.#scopes.has(path)) {
-      const relativePath = nodepath.relative(this.views, path);
-      const hash = nodecrypto
-        .createHash('sha1')
-        .update(relativePath)
-        .digest('hex')
-        .slice(0, 8);
+      const hexHash = nodecrypto
+        .createHash('sha256')
+        .update(path)
+        .digest('hex');
+      const b36Hash = BigInt('0x' + hexHash).toString(36);
+      const hash = b36Hash.substring(0, 6);
       this.#scopes.set(path, hash);
     }
 

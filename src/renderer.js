@@ -63,7 +63,7 @@ function renderAST(ast, scope, ctx) {
 
 // evaluate
 function renderEvaluate(ast, scope, ctx) {
-  return evaluateAST(ast, scope);
+  return evaluateAST(ast, scope, ctx);
 }
 
 // text node
@@ -129,17 +129,17 @@ function renderElement(ast, scope, ctx) {
 }
 function renderIf(ast, scope, ctx) {
   for (const branch of ast.branches) {
-    if (branch.condition === null || evaluateAST(branch.condition, scope)) {
+    if (branch.condition === null || evaluateAST(branch.condition, scope, ctx)) {
       return renderAST(branch.childs, scope, ctx);
     }
   }
   return '';
 }
 function renderRepeat(ast, scope, ctx) {
-  const times = Math.max(0, evaluateAST(ast.times, scope) || 0);
-  const fromRaw = evaluateAST(ast.from, scope);
+  const times = Math.max(0, evaluateAST(ast.times, scope, ctx) || 0);
+  const fromRaw = evaluateAST(ast.from, scope, ctx);
   const from = fromRaw ?? 0;
-  const toRaw = evaluateAST(ast.to, scope);
+  const toRaw = evaluateAST(ast.to, scope, ctx);
   const to = toRaw == null || Number.isNaN(toRaw) ? from + times : toRaw;
   const step = 1;
   const key = ast.index;

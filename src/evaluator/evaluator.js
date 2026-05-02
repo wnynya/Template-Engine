@@ -28,12 +28,18 @@ function safeEval(code, scope = {}) {
   return evaluateExpression(expression, scope);
 }
 
-function evaluateAST(ast, scope) {
+function evaluateAST(ast, scope, ctx = {}) {
   if (!ast.value) {
     return ast.value;
   }
 
-  const value = safeEval(ast.value, scope);
+  let value;
+  try {
+    value = safeEval(ast.value, scope);
+  } catch (error) {
+    throw createEvaluationError(error, ast.value, ctx);
+  }
+
   if (ast.return === 'string') {
     return String(value);
   }
@@ -44,6 +50,17 @@ function evaluateAST(ast, scope) {
     return Boolean(value);
   }
   return value;
+}
+
+function createEvaluationError(error, expression, ctx) {
+  const location = ctx.path ? ` in ${ctx.path}` : '';
+  const wrapped = new Error(
+    `Evaluation failed${location}: ${expression}\n${error.message}`,
+  );
+  wrapped.cause = error;
+  wrapped.expression = expression;
+  wrapped.template = ctx.path;
+  return wrapped;
 }
 
 class Parser {

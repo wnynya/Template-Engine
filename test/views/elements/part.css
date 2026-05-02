@@ -1,21 +1,21 @@
 @import './nested.css';
 @import '/global.css';
 
-[scoped] .hello {
+.hello {
   color: red;
 }
 
-[scoped] img {
+img {
   width: 100px;
 }
 
-[scoped] .bg {
+.bg {
   width: 100px;
   height: 100px;
   background-image: url('./IMG_7101-sq.jpg');
   background-size: cover;
 }
 
-[scoped] .absolute-bg {
+.absolute-bg {
   background-image: url('/images/bg.png');
 }

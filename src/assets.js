@@ -169,7 +169,29 @@ class Assets {
 }
 
 function rewriteScopedCSS(css, scope) {
-  return css.replaceAll('[scoped]', `[scoped="${scope}"]`);
+  const scopeSelector = `[scoped="${scope}"]`;
+
+  return css.replaceAll(/([^{}]+)\{/g, (match, selector) => {
+    const semicolonIndex = selector.lastIndexOf(';');
+    const prefix = semicolonIndex === -1 ? '' : selector.slice(0, semicolonIndex + 1);
+    const target = semicolonIndex === -1 ? selector : selector.slice(semicolonIndex + 1);
+
+    if (target.trimStart().startsWith('@')) {
+      return match;
+    }
+
+    const scopedSelector = target
+      .split(',')
+      .map((part) => rewriteScopedSelector(part, scopeSelector))
+      .join(',');
+
+    return `${prefix}${scopedSelector}{`;
+  });
+}
+
+function rewriteScopedSelector(selector, scopeSelector) {
+  const space = selector.match(/^\s*/)[0];
+  return `${space}${scopeSelector} ${selector.trim()}`;
 }
 function isLocalSpecifier(target) {
   return (
